@@ -1,85 +1,51 @@
-document.addEventListener("DOMContentLoaded", pageSetup)
+const monstersUrl = `http://localhost:3000/monsters`;
+const monsterContainer = document.getElementById('monster-container');
+const monsterForm = document.getElementById('monster-form');
 
-function pageSetup() {
-    fetchMonsters()
-    monsterForm().addEventListener('submit', processMonsterForm)
-    nextButton().addEventListener('click', () => paginate('next'))
-    backButton().addEventListener('click', () => paginate('back'))
+
+const fetchMonsters = () => {
+    fetch(monstersUrl)
+    .then(resp => resp.json())
+    .then(monsters => {
+        renderMonsters(monsters)
+    })
 }
 
-function callPaginateNext() {
-    paginate('next')
-}
-
-function fetchMonsters(page_num=1) {
-    monsterContainer().innerHTML = ""
-    monsterContainer().dataset.currentPage = page_num
-    fetch(`http://localhost:3000/monsters?_limit=10&_page=${page_num}`)
-        .then(r => r.json())
-        .then(monsterJson => monsterJson.forEach(monster => renderMonster(monster)))
-}
-
-function paginate(direction) {
-    let currentPage = monsterContainer().dataset.currentPage 
-    if (direction === 'back') {
-        currentPage--
-    } else {
-        currentPage++
+const renderMonsters = (monsters) => {
+    for (monster in monsters) {
+        renderMonster(monster)
     }
-    currentPage = Math.min(Math.max(currentPage, 1), 100)
-    fetchMonsters(currentPage)
 }
 
-function renderMonster(monster) {
-    let container = monsterContainer()
-    let card = document.createElement('div')
-    let monsterName = document.createElement('h2')
-    monsterName.innerText = monster.name 
-
-    let monsterAge = document.createElement('div')
-    monsterAge.innerText = monster.age
-
-    let monsterDesc = document.createElement('div')
-    monsterDesc.innerText = monster.description
-
-    container.appendChild(card)
-    card.appendChild(monsterName)
-    card.appendChild(monsterAge)
-    card.appendChild(monsterDesc)
-
+const renderMonster = (monster) => {
+    const div = document.createElement('div')
+    div.innerText = `${monster.name} - ${monster.age} - ${monster.name}`
+    monsterContainer.appendChild(div)
 }
 
-function monsterContainer() {
-    return document.getElementById('monster-container')
-}
-
-function monsterForm() {
-    return document.getElementsByTagName('form')[0]
-}
-
-function processMonsterForm(event) {
-    event.preventDefault() 
-    let form = event.currentTarget
-
-    let name = form.children.name.value
-    let age = form.children.age.value 
-    let description = form.children.description.value
-
-    let monsterPayload = {"name": name, age: age, description: description}
-    fetch("http://localhost:3000/monsters", {
+monsterForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const name = e.target.name.value
+    const age = e.target.age.value
+    const description = e.target.description.value
+    e.target.reset();
+    const formData = {
+        name: name,
+        age: age,
+        description: description
+    }
+    const reqObj = {
         method: "POST",
-        headers: {"Content-Type": "application/json"},
-        body: JSON.stringify(monsterPayload)
-    }).then(r => r.json())
-    .then(monster => renderMonster(monster))
-    .catch(error => console.log(`Paul's error: ${error}`))
-    form.reset()
-}
+        headers: {
+            "Content-Type": "application/json",
+            "Accept": "application/json"
+        },
+        body: JSON.stringify(formData)
+    }
 
-function nextButton() {
-    return document.getElementById("next")
-}
-
-function backButton() {
-    return document.getElementById("back")
-}
+    fetch(monstersUrl, reqObj)
+    .then(resp => resp.json())
+    .then(monster => {
+        renderMonster(monster)
+    })
+})
